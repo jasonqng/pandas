@@ -145,7 +145,7 @@ class GbqConnector(object):
     scope = 'https://www.googleapis.com/auth/bigquery'
 
     def __init__(self, project_id, reauth=False, verbose=False,
-                 private_key=None, dialect='legacy'):
+                 private_key=None, dialect='legacy', billing_tier = 1):
         _check_google_client_version()
         _test_google_api_imports()
         self.project_id = project_id
@@ -153,6 +153,7 @@ class GbqConnector(object):
         self.verbose = verbose
         self.private_key = private_key
         self.dialect = dialect
+        self.billing_tier = billing_tier
         self.credentials = self.get_credentials()
         self.service = self.get_service()
 
@@ -389,7 +390,8 @@ class GbqConnector(object):
         job_config = {
             'query': {
                 'query': query,
-                'useLegacySql': self.dialect == 'legacy'
+                'useLegacySql': self.dialect == 'legacy',
+                'maximumBillingTier': '%s' % self.billing_tier
                 # 'allowLargeResults', 'createDisposition',
                 # 'preserveNulls', destinationTable, useQueryCache
             }
@@ -640,6 +642,7 @@ def _parse_entry(field_value, field_type):
 
 def read_gbq(query, project_id=None, index_col=None, col_order=None,
              reauth=False, verbose=True, private_key=None, dialect='legacy',
+             billing_tier = 1,
              **kwargs):
     r"""Load data from Google BigQuery.
 
@@ -726,7 +729,7 @@ def read_gbq(query, project_id=None, index_col=None, col_order=None,
 
     connector = GbqConnector(project_id, reauth=reauth, verbose=verbose,
                              private_key=private_key,
-                             dialect=dialect)
+                             dialect=dialect, billing_tier=billing_tier)
     schema, pages = connector.run_query(query, **kwargs)
     dataframe_list = []
     while len(pages) > 0:
